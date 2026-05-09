@@ -5,7 +5,14 @@ import { Dashboard } from './pages/Dashboard'; // <-- Importe o Dashboard real
 
 // Componente para proteger rotas (Só acessa se estiver logado)
 function PrivateRoute({ children }: { children: JSX.Element }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="text-indigo-600 font-medium">Verificando credenciais...</p>
+      </div>
+    );
+  }
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
