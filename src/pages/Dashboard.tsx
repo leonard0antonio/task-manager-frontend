@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { Task } from '../types';
+import type { Task } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { AdminPanel } from '../components/AdminPanel';
 
 export function Dashboard() {
   const { user, logout } = useAuth();
@@ -54,6 +55,11 @@ export function Dashboard() {
       {/* Conteúdo Principal */}
       <main className="max-w-6xl mx-auto p-6 mt-4">
         
+        {/* Renderiza o Painel de Admin SOMENTE se a role for 'admin' */}
+        {user?.role === 'admin' && (
+          <AdminPanel onTaskCreated={fetchTasks} />
+        )}
+
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-slate-800">Suas Tarefas</h2>
           <button 
@@ -105,6 +111,8 @@ export function Dashboard() {
             ))}
           </div>
         )}
+
+        
       </main>
     </div>
   );
