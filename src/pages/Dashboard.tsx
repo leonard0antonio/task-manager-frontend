@@ -92,8 +92,9 @@ export function Dashboard() {
                   </span>
                 </div>
                 
-                <p className="text-sm text-slate-600 mb-4 h-10 overflow-hidden">
-                  {task.description || 'Sem descrição.'}
+                {/* AQUI ESTÁ A CORREÇÃO DA DESCRIÇÃO */}
+                <p className="text-sm text-slate-600 mb-4 min-h-[40px] italic">
+                  {task.description ? task.description : "Sem descrição informada."}
                 </p>
                 
                 <div className="pt-4 border-t border-slate-100 text-xs text-slate-500 flex flex-col gap-1">
@@ -111,8 +112,6 @@ export function Dashboard() {
             ))}
           </div>
         )}
-
-        
       </main>
     </div>
   );

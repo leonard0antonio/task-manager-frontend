@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import type { Team } from '../types';
-import type { User } from '../types';
+import type { Team, User } from '../types';
 
 interface AdminPanelProps {
   onTaskCreated: () => void;
@@ -22,6 +21,7 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
   const [userMsg, setUserMsg] = useState({ text: '', isError: false });
 
   const [taskTitle, setTaskTitle] = useState('');
+  const [taskDescription, setTaskDescription] = useState('');
   const [taskPriority, setTaskPriority] = useState('medium');
   const [taskTeamId, setTaskTeamId] = useState('');
   const [taskAssignee, setTaskAssignee] = useState('');
@@ -46,6 +46,8 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
     } catch (error) { console.error('Erro ao carregar usuários'); }
   };
 
+  // --- FUNÇÕES DE CRIAÇÃO ---
+
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -61,11 +63,10 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Aproveitamos a rota de register para criar o membro por baixo dos panos
       await api.post('/auth/register', { name: userName, email: userEmail, password: userPassword, role: 'member' });
       setUserMsg({ text: 'Usuário criado!', isError: false });
       setUserName(''); setUserEmail(''); setUserPassword('');
-      fetchUsers(); // Atualiza a lista de usuários na hora!
+      fetchUsers();
     } catch (error: any) {
       setUserMsg({ text: error.response?.data?.error || 'Erro', isError: true });
     }
@@ -74,17 +75,52 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const payload: any = { title: taskTitle, priority: taskPriority, team_id: Number(taskTeamId) };
+      // Adicionamos a description aqui no payload para ir pro Back-end!
+      const payload: any = { 
+        title: taskTitle, 
+        description: taskDescription,
+        priority: taskPriority, 
+        team_id: Number(taskTeamId) 
+      };
+      
       if (taskAssignee) payload.assigned_to = Number(taskAssignee);
 
       await api.post('/tasks', payload);
       setTaskMsg({ text: 'Tarefa criada!', isError: false });
-      setTaskTitle(''); setTaskTeamId(''); setTaskAssignee('');
+      
+      // Limpa os campos
+      setTaskTitle(''); 
+      setTaskDescription('');
+      setTaskTeamId(''); 
+      setTaskAssignee('');
+      
       onTaskCreated();
     } catch (error: any) {
       setTaskMsg({ text: error.response?.data?.error || 'Erro', isError: true });
     }
   };
+
+  // --- FUNÇÕES DE GESTÃO DE USUÁRIOS ---
+
+  const handleDeleteUser = async (id: number) => {
+    if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
+    try {
+      await api.delete(`/users/${id}`);
+      fetchUsers(); // Atualiza a lista na hora
+      alert("Usuário removido!");
+    } catch (error) { alert("Erro ao excluir"); }
+  };
+  
+  const handleEditUser = async (user: User) => {
+    const newName = prompt("Novo nome:", user.name);
+    if (!newName) return;
+    try {
+      await api.patch(`/users/${user.id}`, { name: newName });
+      fetchUsers(); // Atualiza a lista na hora
+      alert("Nome atualizado!");
+    } catch (error) { alert("Erro ao editar"); }
+  };
+
 
   return (
     <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-xl mb-8 shadow-sm">
@@ -116,6 +152,7 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
       {/* Linha 2: Criar Tarefa */}
       <form onSubmit={handleCreateTask} className="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
         <h3 className="font-semibold text-slate-700 mb-3">✅ Criar e Atribuir Tarefa</h3>
+        
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
           <input type="text" placeholder="Título" required value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} className="p-2 border border-slate-300 rounded-md text-sm outline-none" />
           
@@ -130,16 +167,70 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
             {teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
           </select>
 
-          {/* A MÁGICA: Dropdown de Usuários! */}
           <select value={taskAssignee} onChange={(e) => setTaskAssignee(e.target.value)} className="p-2 border border-slate-300 rounded-md text-sm outline-none bg-white">
             <option value="">Sem atribuição (Aberto)</option>
             {users.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
           </select>
-
         </div>
-        <button type="submit" className="w-full bg-emerald-600 text-white py-2 rounded-md font-medium hover:bg-emerald-700">Cadastrar Tarefa</button>
+
+        {/* Textarea de descrição arrumado dentro do formulário! */}
+        <textarea 
+          placeholder="Descrição detalhada da tarefa..." 
+          value={taskDescription}
+          onChange={(e) => setTaskDescription(e.target.value)}
+          className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none h-20 resize-none mb-3"
+        />
+
+        <button type="submit" className="w-full bg-emerald-600 text-white py-2 rounded-md font-medium hover:bg-emerald-700 transition">
+          Cadastrar Tarefa
+        </button>
         {taskMsg.text && <p className={`text-xs font-bold mt-2 text-center ${taskMsg.isError ? 'text-red-500' : 'text-emerald-600'}`}>{taskMsg.text}</p>}
       </form>
+
+      {/* Linha 3: Tabela de Gestão de Usuários */}
+      <div className="mt-6 bg-white p-5 rounded-lg shadow-sm border border-slate-200">
+        <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+          👥 Meus Usuários Cadastrados
+        </h3>
+        
+        {users.length === 0 ? (
+          <p className="text-sm text-slate-500">Você ainda não cadastrou nenhum membro.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 text-slate-500 uppercase text-[10px]">
+                <tr>
+                  <th className="p-3 rounded-tl-md">Nome</th>
+                  <th className="p-3">E-mail</th>
+                  <th className="p-3 rounded-tr-md">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {users.map(u => (
+                  <tr key={u.id} className="hover:bg-slate-50 transition">
+                    <td className="p-3 font-medium text-slate-700">{u.name}</td>
+                    <td className="p-3 text-slate-500">{u.email}</td>
+                    <td className="p-3 flex gap-4">
+                      <button 
+                        onClick={() => handleEditUser(u)}
+                        className="text-indigo-600 hover:text-indigo-800 font-medium"
+                      >
+                        Editar
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteUser(u.id)}
+                        className="text-red-600 hover:text-red-800 font-medium"
+                      >
+                        Excluir
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
     </div>
   );
