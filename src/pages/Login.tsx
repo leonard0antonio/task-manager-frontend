@@ -1,66 +1,87 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
 
 export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault(); // Evita que a página recarregue
+    e.preventDefault();
     setError('');
+    setIsLoading(true); // Inicia o loading no botão
 
     try {
       await login(email, password);
-      navigate('/dashboard'); // Manda o usuário para o painel se der certo
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erro ao fazer login. Verifique suas credenciais.');
+    } finally {
+      setIsLoading(false); // Para o loading independente do resultado
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-slate-100 p-8">
-        <h2 className="text-2xl font-bold text-indigo-600 text-center mb-6">Task Manager</h2>
+    // Fundo com gradiente sutil para um toque premium
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
+      
+      {/* Card da área de Login */}
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-white/20 p-8 sm:p-10">
         
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-              placeholder="admin@teste.com"
-              required
-            />
+        {/* Cabeçalho / Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-100 text-indigo-600 rounded-xl mb-4 shadow-inner">
+            <span className="text-2xl">⚡</span>
           </div>
+          <h2 className="text-2xl font-black text-slate-800 tracking-tight">
+            Task Manager
+          </h2>
+          <p className="text-sm text-slate-500 mt-1 font-medium">
+            Entre para gerenciar seus projetos
+          </p>
+        </div>
+        
+        <form onSubmit={handleLogin} className="space-y-5">
+          <Input 
+            label="E-mail"
+            type="email" 
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="nome@empresa.com"
+            required
+            autoComplete="email"
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Senha</label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-              placeholder="******"
-              required
-            />
+          <Input 
+            label="Senha"
+            type="password" 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+            autoComplete="current-password"
+          />
+
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+              <p className="text-red-600 text-sm font-semibold text-center">{error}</p>
+            </div>
+          )}
+
+          <div className="pt-2">
+            <Button type="submit" isLoading={isLoading}>
+              Acessar Plataforma
+            </Button>
           </div>
-
-          {error && <p className="text-red-500 text-sm font-medium text-center">{error}</p>}
-
-          <button 
-            type="submit" 
-            className="w-full bg-indigo-600 text-white font-medium py-2 rounded-md hover:bg-indigo-700 transition"
-          >
-            Entrar
-          </button>
         </form>
+
       </div>
     </div>
   );
