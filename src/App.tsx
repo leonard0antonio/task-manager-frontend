@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login } from './pages/Login';
-import { Dashboard } from './pages/Dashboard'; // <-- Importe o Dashboard real
+import { Dashboard } from './pages/Dashboard'; 
+import { Landing } from './pages/Landing';
 
 // Componente para proteger rotas (Só acessa se estiver logado)
 function PrivateRoute({ children }: { children: JSX.Element }) {
@@ -16,14 +17,18 @@ function PrivateRoute({ children }: { children: JSX.Element }) {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
-function App() {
+export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+
+          <Route path="/" element={<Landing />} />
+
           <Route path="/login" element={<Login />} />
+
           <Route 
+
             path="/dashboard" 
             element={
               <PrivateRoute>
@@ -31,6 +36,8 @@ function App() {
               </PrivateRoute>
             } 
           />
+          {/* Qualquer outra rota não mapeada manda de volta pra Home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
