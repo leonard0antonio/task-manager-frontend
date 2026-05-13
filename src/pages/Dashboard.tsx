@@ -8,10 +8,14 @@ import { AdminPanel } from '../components/AdminPanel';
 export function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // NOVO: Estado da barra de pesquisa
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Estados para o Modal de Edição
+  // Estados para o Modal de Edição e UX
   const [editModal, setEditModal] = useState<{ isOpen: boolean; task: any | null }>({ isOpen: false, task: null });
   const [teams, setTeams] = useState<Team[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -58,10 +62,8 @@ export function Dashboard() {
     } catch (error) { showToast('Erro ao excluir tarefa.', true); }
   };
 
-  // --- Lógica de Edição ---
   const openEditModal = async (task: Task) => {
-    setEditModal({ isOpen: true, task: { ...task } }); // Clona a tarefa pro modal
-    // Busca os times e usuários se ainda não os tivermos na memória
+    setEditModal({ isOpen: true, task: { ...task } });
     if (teams.length === 0) {
       try {
         const [resTeams, resUsers] = await Promise.all([api.get('/teams'), api.get('/users')]);
@@ -88,6 +90,14 @@ export function Dashboard() {
     } catch (error) { showToast('Erro ao salvar edição.', true); }
   };
 
+  // NOVO: Lógica de filtragem (A Mágica da Busca Rápida)
+  const filteredTasks = tasks.filter(task => {
+    const query = searchQuery.toLowerCase();
+    const titleMatch = task.title.toLowerCase().includes(query);
+    const descMatch = task.description?.toLowerCase().includes(query);
+    return titleMatch || descMatch;
+  });
+
   return (
     <div className="min-h-screen bg-slate-50">
       <nav className="bg-indigo-600 text-white p-4 shadow-md">
@@ -108,13 +118,34 @@ export function Dashboard() {
           <button onClick={fetchTasks} className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-md hover:bg-slate-50 transition font-medium shadow-sm text-sm">🔄 Atualizar</button>
         </div>
 
+        {/* BARRA DE PESQUISA */}
+        {!loading && tasks.length > 0 && (
+          <div className="mb-6">
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                🔍
+              </span>
+              <input
+                type="text"
+                placeholder="Buscar tarefas por título ou descrição..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 p-3 border border-slate-300 rounded-lg shadow-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition text-sm text-slate-700"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Renderização baseada nas tarefas filtradas */}
         {loading ? (
           <p className="text-center text-slate-500 mt-10">Carregando tarefas...</p>
         ) : tasks.length === 0 ? (
-          <div className="text-center bg-white p-10 rounded-xl border border-dashed border-slate-300 text-slate-500">Nenhuma tarefa encontrada.</div>
+          <div className="text-center bg-white p-10 rounded-xl border border-dashed border-slate-300 text-slate-500">Nenhuma tarefa encontrada no projeto.</div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="text-center bg-white p-10 rounded-xl border border-dashed border-slate-300 text-slate-500">Nenhuma tarefa combina com a sua busca: <b>"{searchQuery}"</b></div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tasks.map((task) => (
+            {filteredTasks.map((task) => (
               <div key={task.id} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-start mb-3">
@@ -126,7 +157,9 @@ export function Dashboard() {
                       {task.status.replace('_', ' ')}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-600 mb-4 min-h-[40px] italic">{task.description || "Sem descrição informada."}</p>
+                  <p className="text-sm text-slate-600 mb-4 min-h-[40px] italic line-clamp-2" title={task.description || ''}>
+                    {task.description || "Sem descrição informada."}
+                  </p>
                   <div className="pt-4 border-t border-slate-100 text-xs text-slate-500 flex flex-col gap-1 mb-4">
                     <span className="flex items-center gap-1">🏢 {task.team?.name || `Time ID: ${task.team_id}`}</span>
                     <span className="flex items-center gap-1 font-medium text-indigo-600">👤 {task.assignee?.name || 'Não atribuída'}</span>
@@ -142,7 +175,6 @@ export function Dashboard() {
                     <button onClick={() => handleStatusChange(task.id, 'in_progress')} className="flex-1 bg-blue-50 text-blue-700 font-medium py-1.5 rounded text-sm hover:bg-blue-100 transition border border-blue-200">⏪ Reabrir</button>
                   )}
                   
-                  {/* AÇÕES DE ADMIN: EDITAR E EXCLUIR */}
                   {user?.role === 'admin' && (
                     <>
                       <button onClick={() => openEditModal(task)} className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded text-sm hover:bg-amber-100 transition border border-amber-200" title="Editar Tarefa">✏️</button>
@@ -150,27 +182,22 @@ export function Dashboard() {
                     </>
                   )}
                 </div>
-
               </div>
             ))}
           </div>
         )}
       </main>
 
-      {/* ========================================= */}
-      {/* MODAL DE EDIÇÃO DE TAREFA                 */}
-      {/* ========================================= */}
+      {/* Modal de Edição (Mantido idêntico) */}
       {editModal.isOpen && editModal.task && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 px-4">
           <div className="bg-white p-6 rounded-xl shadow-xl max-w-lg w-full">
             <h3 className="text-lg font-bold text-slate-800 mb-4">Editar Tarefa</h3>
             <form onSubmit={executeEditTask}>
-              
               <div className="mb-3">
                 <label className="block text-xs font-medium text-slate-600 mb-1">Título</label>
                 <input type="text" required value={editModal.task.title} onChange={(e) => setEditModal({...editModal, task: {...editModal.task, title: e.target.value}})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none" />
               </div>
-
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1">Prioridade</label>
@@ -187,7 +214,6 @@ export function Dashboard() {
                   </select>
                 </div>
               </div>
-
               <div className="mb-3">
                 <label className="block text-xs font-medium text-slate-600 mb-1">Atribuir para (Opcional)</label>
                 <select value={editModal.task.assigned_to || ''} onChange={(e) => setEditModal({...editModal, task: {...editModal.task, assigned_to: e.target.value}})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none bg-white">
@@ -195,29 +221,24 @@ export function Dashboard() {
                   {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               </div>
-
               <div className="mb-5">
                 <label className="block text-xs font-medium text-slate-600 mb-1">Descrição</label>
                 <textarea value={editModal.task.description || ''} onChange={(e) => setEditModal({...editModal, task: {...editModal.task, description: e.target.value}})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none h-20 resize-none" />
               </div>
-
               <div className="flex gap-3 justify-end">
                 <button type="button" onClick={() => setEditModal({ isOpen: false, task: null })} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition">Cancelar</button>
                 <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition">Salvar Alterações</button>
               </div>
-
             </form>
           </div>
         </div>
       )}
 
-      {/* Notificação Flutuante (Toast) */}
       {toast.show && (
         <div className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg font-medium text-sm text-white transform transition-all duration-300 ${toast.isError ? 'bg-red-600' : 'bg-emerald-600'} z-50`}>
           {toast.text}
         </div>
       )}
-
     </div>
   );
 }
