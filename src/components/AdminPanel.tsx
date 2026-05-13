@@ -7,11 +7,10 @@ interface AdminPanelProps {
 }
 
 export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
-  // Estados para as Listagens (Dropdowns)
+  // --- ESTADOS EXISTENTES ---
   const [teams, setTeams] = useState<Team[]>([]);
   const [users, setUsers] = useState<User[]>([]);
 
-  // Estados dos Formulários
   const [teamName, setTeamName] = useState('');
   const [teamMsg, setTeamMsg] = useState({ text: '', isError: false });
 
@@ -26,6 +25,11 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
   const [taskTeamId, setTaskTeamId] = useState('');
   const [taskAssignee, setTaskAssignee] = useState('');
   const [taskMsg, setTaskMsg] = useState({ text: '', isError: false });
+
+  // --- NOVOS ESTADOS PARA UX (MODAIS E TOAST) ---
+  const [toast, setToast] = useState({ show: false, text: '', isError: false });
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; userId: number | null }>({ isOpen: false, userId: null });
+  const [editModal, setEditModal] = useState<{ isOpen: boolean; user: User | null; newName: string }>({ isOpen: false, user: null, newName: '' });
 
   useEffect(() => {
     fetchTeams();
@@ -46,8 +50,13 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
     } catch (error) { console.error('Erro ao carregar usuários'); }
   };
 
-  // --- FUNÇÕES DE CRIAÇÃO ---
+  // Função auxiliar para mostrar a notificação flutuante
+  const showToast = (text: string, isError = false) => {
+    setToast({ show: true, text, isError });
+    setTimeout(() => setToast({ show: false, text: '', isError: false }), 3000);
+  };
 
+  // --- FUNÇÕES DE CRIAÇÃO (mantidas iguais) ---
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -63,75 +72,65 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/auth/register', { name: userName, email: userEmail, password: userPassword, role: 'member' });
-      setUserMsg({ text: 'Usuário criado!', isError: false });
+      await api.post('/users', { name: userName, email: userEmail, password: userPassword, role: 'member' });
+      setUserMsg({ text: 'Usuário criado com sucesso!', isError: false });
       setUserName(''); setUserEmail(''); setUserPassword('');
       fetchUsers();
     } catch (error: any) {
-      setUserMsg({ text: error.response?.data?.error || 'Erro', isError: true });
+      setUserMsg({ text: error.response?.data?.error || 'Erro ao criar', isError: true });
     }
   };
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Adicionamos a description aqui no payload para ir pro Back-end!
-      const payload: any = { 
-        title: taskTitle, 
-        description: taskDescription,
-        priority: taskPriority, 
-        team_id: Number(taskTeamId) 
-      };
-      
+      const payload: any = { title: taskTitle, description: taskDescription, priority: taskPriority, team_id: Number(taskTeamId) };
       if (taskAssignee) payload.assigned_to = Number(taskAssignee);
-
       await api.post('/tasks', payload);
       setTaskMsg({ text: 'Tarefa criada!', isError: false });
-      
-      // Limpa os campos
-      setTaskTitle(''); 
-      setTaskDescription('');
-      setTaskTeamId(''); 
-      setTaskAssignee('');
-      
+      setTaskTitle(''); setTaskDescription(''); setTaskTeamId(''); setTaskAssignee('');
       onTaskCreated();
     } catch (error: any) {
       setTaskMsg({ text: error.response?.data?.error || 'Erro', isError: true });
     }
   };
 
-  // --- FUNÇÕES DE GESTÃO DE USUÁRIOS ---
+  // --- FUNÇÕES DE GESTÃO COM NOVA UX ---
 
- const handleDeleteUser = async (id: number) => {
-    if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
+  const executeDeleteUser = async () => {
+    if (!deleteModal.userId) return;
     try {
-      await api.delete(`/users/${id}`);
-      fetchUsers(); // Atualiza a lista na hora
-      alert("Usuário removido!");
+      await api.delete(`/users/${deleteModal.userId}`);
+      fetchUsers();
+      showToast("Usuário removido com sucesso!");
     } catch (error: any) {
-      // AGORA ELE VAI MOSTRAR O TEXTO EXATO DO ERRO:
-      alert(error.response?.data?.error || "Erro ao excluir o usuário");
+      showToast(error.response?.data?.error || "Erro ao excluir o usuário", true);
+    } finally {
+      setDeleteModal({ isOpen: false, userId: null }); // Fecha o modal
     }
   };
   
-  const handleEditUser = async (user: User) => {
-    const newName = prompt("Novo nome:", user.name);
-    if (!newName) return;
+  const executeEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editModal.user) return;
     try {
-      await api.patch(`/users/${user.id}`, { name: newName });
-      fetchUsers(); // Atualiza a lista na hora
-      alert("Nome atualizado!");
-    } catch (error) { alert("Erro ao editar"); }
+      await api.patch(`/users/${editModal.user.id}`, { name: editModal.newName });
+      fetchUsers();
+      showToast("Nome atualizado com sucesso!");
+    } catch (error) {
+      showToast("Erro ao editar usuário", true);
+    } finally {
+      setEditModal({ isOpen: false, user: null, newName: '' }); // Fecha o modal
+    }
   };
 
 
   return (
-    <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-xl mb-8 shadow-sm">
+    <div className="bg-indigo-50 border border-indigo-100 p-6 rounded-xl mb-8 shadow-sm relative">
       <h2 className="text-xl font-bold text-indigo-800 mb-4">👑 Painel do Administrador</h2>
       
-      {/* Linha 1: Criar Time & Criar Usuário */}
+      {/* Formulários (Linhas 1 e 2 mantidas iguais) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        
         <form onSubmit={handleCreateTeam} className="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
           <h3 className="font-semibold text-slate-700 mb-3">🏢 Criar Novo Time</h3>
           <input type="text" placeholder="Nome do Time" required value={teamName} onChange={(e) => setTeamName(e.target.value)} className="w-full p-2 border border-slate-300 rounded-md text-sm mb-3 outline-none" />
@@ -144,58 +143,39 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
           <div className="grid grid-cols-2 gap-2 mb-3">
             <input type="text" placeholder="Nome" required value={userName} onChange={(e) => setUserName(e.target.value)} className="col-span-2 p-2 border border-slate-300 rounded-md text-sm outline-none" />
             <input type="email" placeholder="E-mail" required value={userEmail} onChange={(e) => setUserEmail(e.target.value)} className="p-2 border border-slate-300 rounded-md text-sm outline-none" />
-            <input type="password" placeholder="Senha provisória" required value={userPassword} onChange={(e) => setUserPassword(e.target.value)} className="p-2 border border-slate-300 rounded-md text-sm outline-none" />
+            <input type="password" placeholder="Senha" required value={userPassword} onChange={(e) => setUserPassword(e.target.value)} className="p-2 border border-slate-300 rounded-md text-sm outline-none" />
           </div>
           <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-md font-medium hover:bg-indigo-700">Cadastrar Usuário</button>
           {userMsg.text && <p className={`text-xs font-bold mt-2 text-center ${userMsg.isError ? 'text-red-500' : 'text-emerald-600'}`}>{userMsg.text}</p>}
         </form>
-
       </div>
 
-      {/* Linha 2: Criar Tarefa */}
       <form onSubmit={handleCreateTask} className="bg-white p-5 rounded-lg shadow-sm border border-slate-200">
         <h3 className="font-semibold text-slate-700 mb-3">✅ Criar e Atribuir Tarefa</h3>
-        
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
           <input type="text" placeholder="Título" required value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} className="p-2 border border-slate-300 rounded-md text-sm outline-none" />
-          
           <select value={taskPriority} onChange={(e) => setTaskPriority(e.target.value)} className="p-2 border border-slate-300 rounded-md text-sm outline-none bg-white">
             <option value="high">Prioridade Alta</option>
             <option value="medium">Prioridade Média</option>
             <option value="low">Prioridade Baixa</option>
           </select>
-          
           <select required value={taskTeamId} onChange={(e) => setTaskTeamId(e.target.value)} className="p-2 border border-slate-300 rounded-md text-sm outline-none bg-white">
             <option value="" disabled>Selecione o Time...</option>
             {teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
           </select>
-
           <select value={taskAssignee} onChange={(e) => setTaskAssignee(e.target.value)} className="p-2 border border-slate-300 rounded-md text-sm outline-none bg-white">
             <option value="">Sem atribuição (Aberto)</option>
             {users.map(user => <option key={user.id} value={user.id}>{user.name}</option>)}
           </select>
         </div>
-
-        {/* Textarea de descrição arrumado dentro do formulário! */}
-        <textarea 
-          placeholder="Descrição detalhada da tarefa..." 
-          value={taskDescription}
-          onChange={(e) => setTaskDescription(e.target.value)}
-          className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none h-20 resize-none mb-3"
-        />
-
-        <button type="submit" className="w-full bg-emerald-600 text-white py-2 rounded-md font-medium hover:bg-emerald-700 transition">
-          Cadastrar Tarefa
-        </button>
+        <textarea placeholder="Descrição detalhada da tarefa..." value={taskDescription} onChange={(e) => setTaskDescription(e.target.value)} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none h-20 resize-none mb-3" />
+        <button type="submit" className="w-full bg-emerald-600 text-white py-2 rounded-md font-medium hover:bg-emerald-700 transition">Cadastrar Tarefa</button>
         {taskMsg.text && <p className={`text-xs font-bold mt-2 text-center ${taskMsg.isError ? 'text-red-500' : 'text-emerald-600'}`}>{taskMsg.text}</p>}
       </form>
 
-      {/* Linha 3: Tabela de Gestão de Usuários */}
+      {/* Tabela de Usuários */}
       <div className="mt-6 bg-white p-5 rounded-lg shadow-sm border border-slate-200">
-        <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-          👥 Meus Usuários Cadastrados
-        </h3>
-        
+        <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">👥 Meus Usuários Cadastrados</h3>
         {users.length === 0 ? (
           <p className="text-sm text-slate-500">Você ainda não cadastrou nenhum membro.</p>
         ) : (
@@ -214,18 +194,9 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
                     <td className="p-3 font-medium text-slate-700">{u.name}</td>
                     <td className="p-3 text-slate-500">{u.email}</td>
                     <td className="p-3 flex gap-4">
-                      <button 
-                        onClick={() => handleEditUser(u)}
-                        className="text-indigo-600 hover:text-indigo-800 font-medium"
-                      >
-                        Editar
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteUser(u.id)}
-                        className="text-red-600 hover:text-red-800 font-medium"
-                      >
-                        Excluir
-                      </button>
+                      {/* Ao invés de rodar a função, abrimos o Modal! */}
+                      <button onClick={() => setEditModal({ isOpen: true, user: u, newName: u.name })} className="text-indigo-600 hover:text-indigo-800 font-medium">Editar</button>
+                      <button onClick={() => setDeleteModal({ isOpen: true, userId: u.id })} className="text-red-600 hover:text-red-800 font-medium">Excluir</button>
                     </td>
                   </tr>
                 ))}
@@ -234,6 +205,48 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
           </div>
         )}
       </div>
+
+      {/* ========================================= */}
+      {/* ÁREA DE MODAIS E FEEDBACKS VISUAIS (NOVO) */}
+      {/* ========================================= */}
+
+      {/* Modal de Exclusão */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full">
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Confirmar Exclusão</h3>
+            <p className="text-sm text-slate-600 mb-6">Tem certeza que deseja remover este usuário? As tarefas dele ficarão sem atribuição. Esta ação não pode ser desfeita.</p>
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setDeleteModal({ isOpen: false, userId: null })} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition">Cancelar</button>
+              <button onClick={executeDeleteUser} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition">Sim, excluir</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição */}
+      {editModal.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">Editar Usuário</h3>
+            <form onSubmit={executeEditUser}>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Nome do Usuário</label>
+              <input type="text" required value={editModal.newName} onChange={(e) => setEditModal({ ...editModal, newName: e.target.value })} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none mb-6 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" />
+              <div className="flex gap-3 justify-end">
+                <button type="button" onClick={() => setEditModal({ isOpen: false, user: null, newName: '' })} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition">Cancelar</button>
+                <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition">Salvar Nome</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Notificação Flutuante (Toast) */}
+      {toast.show && (
+        <div className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg font-medium text-sm text-white transform transition-all duration-300 ${toast.isError ? 'bg-red-600' : 'bg-emerald-600'} z-50`}>
+          {toast.text}
+        </div>
+      )}
 
     </div>
   );
