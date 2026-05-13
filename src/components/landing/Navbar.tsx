@@ -9,7 +9,7 @@ export function Navbar() {
             O
           </span>
           <span className="text-2xl font-black tracking-tight text-slate-800">
-            OrganizaTask<span className="text-indigo-600">.</span>
+            OrganizaTask<span className="text-indigo-600"></span>
           </span>
         </div>
         <div className="flex items-center gap-6">
