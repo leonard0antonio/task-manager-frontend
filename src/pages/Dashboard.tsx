@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import type { Task } from '../types';
+import type { Task, Team, User } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { AdminPanel } from '../components/AdminPanel';
 
@@ -10,6 +10,12 @@ export function Dashboard() {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Estados para o Modal de Edição
+  const [editModal, setEditModal] = useState<{ isOpen: boolean; task: any | null }>({ isOpen: false, task: null });
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [toast, setToast] = useState({ show: false, text: '', isError: false });
 
   useEffect(() => {
     fetchTasks();
@@ -31,25 +37,55 @@ export function Dashboard() {
     navigate('/login');
   };
 
-  // --- NOVAS FUNÇÕES DE INTERAÇÃO ---
+  const showToast = (text: string, isError = false) => {
+    setToast({ show: true, text, isError });
+    setTimeout(() => setToast({ show: false, text: '', isError: false }), 3000);
+  };
 
   const handleStatusChange = async (taskId: number, newStatus: string) => {
     try {
       await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
-      fetchTasks(); // Atualiza a tela para mostrar a cor nova
-    } catch (error) {
-      alert('Erro ao atualizar o status da tarefa.');
-    }
+      fetchTasks();
+    } catch (error) { showToast('Erro ao atualizar o status.', true); }
   };
 
   const handleDeleteTask = async (taskId: number) => {
     if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
     try {
       await api.delete(`/tasks/${taskId}`);
-      fetchTasks(); // Remove o card da tela
-    } catch (error) {
-      alert('Erro ao excluir tarefa. Você tem permissão?');
+      fetchTasks();
+      showToast('Tarefa excluída!', false);
+    } catch (error) { showToast('Erro ao excluir tarefa.', true); }
+  };
+
+  // --- Lógica de Edição ---
+  const openEditModal = async (task: Task) => {
+    setEditModal({ isOpen: true, task: { ...task } }); // Clona a tarefa pro modal
+    // Busca os times e usuários se ainda não os tivermos na memória
+    if (teams.length === 0) {
+      try {
+        const [resTeams, resUsers] = await Promise.all([api.get('/teams'), api.get('/users')]);
+        setTeams(resTeams.data);
+        setUsers(resUsers.data);
+      } catch (e) { console.error("Erro ao buscar dependências pro modal"); }
     }
+  };
+
+  const executeEditTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        title: editModal.task.title,
+        description: editModal.task.description,
+        priority: editModal.task.priority,
+        team_id: Number(editModal.task.team_id),
+        assigned_to: editModal.task.assigned_to ? Number(editModal.task.assigned_to) : null,
+      };
+      await api.put(`/tasks/${editModal.task.id}`, payload);
+      setEditModal({ isOpen: false, task: null });
+      fetchTasks();
+      showToast('Tarefa editada com sucesso!');
+    } catch (error) { showToast('Erro ao salvar edição.', true); }
   };
 
   return (
@@ -67,8 +103,8 @@ export function Dashboard() {
       <main className="max-w-6xl mx-auto p-6 mt-4">
         {user?.role === 'admin' && <AdminPanel onTaskCreated={fetchTasks} />}
 
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-800">Suas Tarefas</h2>
+        <div className="flex justify-between items-center mb-6 mt-8">
+          <h2 className="text-2xl font-bold text-slate-800">Tarefas do Projeto</h2>
           <button onClick={fetchTasks} className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-md hover:bg-slate-50 transition font-medium shadow-sm text-sm">🔄 Atualizar</button>
         </div>
 
@@ -98,34 +134,20 @@ export function Dashboard() {
                   </div>
                 </div>
 
-                {/* BOTÕES DE AÇÃO NO FINAL DO CARD */}
                 <div className="flex gap-2 mt-auto border-t border-slate-100 pt-3">
                   {task.status !== 'completed' && (
-                    <button 
-                      onClick={() => handleStatusChange(task.id, 'completed')}
-                      className="flex-1 bg-emerald-50 text-emerald-700 font-medium py-1.5 rounded text-sm hover:bg-emerald-100 transition border border-emerald-200"
-                    >
-                      ✅ Concluir
-                    </button>
+                    <button onClick={() => handleStatusChange(task.id, 'completed')} className="flex-1 bg-emerald-50 text-emerald-700 font-medium py-1.5 rounded text-sm hover:bg-emerald-100 transition border border-emerald-200">✅ Concluir</button>
                   )}
                   {task.status === 'completed' && (
-                    <button 
-                      onClick={() => handleStatusChange(task.id, 'in_progress')}
-                      className="flex-1 bg-blue-50 text-blue-700 font-medium py-1.5 rounded text-sm hover:bg-blue-100 transition border border-blue-200"
-                    >
-                      ⏪ Reabrir
-                    </button>
+                    <button onClick={() => handleStatusChange(task.id, 'in_progress')} className="flex-1 bg-blue-50 text-blue-700 font-medium py-1.5 rounded text-sm hover:bg-blue-100 transition border border-blue-200">⏪ Reabrir</button>
                   )}
                   
-                  {/* Somente Admin pode ver o botão de excluir */}
+                  {/* AÇÕES DE ADMIN: EDITAR E EXCLUIR */}
                   {user?.role === 'admin' && (
-                    <button 
-                      onClick={() => handleDeleteTask(task.id)}
-                      className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-sm hover:bg-red-100 transition border border-red-200"
-                      title="Excluir Tarefa"
-                    >
-                      🗑️
-                    </button>
+                    <>
+                      <button onClick={() => openEditModal(task)} className="bg-amber-50 text-amber-600 px-3 py-1.5 rounded text-sm hover:bg-amber-100 transition border border-amber-200" title="Editar Tarefa">✏️</button>
+                      <button onClick={() => handleDeleteTask(task.id)} className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-sm hover:bg-red-100 transition border border-red-200" title="Excluir Tarefa">🗑️</button>
+                    </>
                   )}
                 </div>
 
@@ -134,6 +156,68 @@ export function Dashboard() {
           </div>
         )}
       </main>
+
+      {/* ========================================= */}
+      {/* MODAL DE EDIÇÃO DE TAREFA                 */}
+      {/* ========================================= */}
+      {editModal.isOpen && editModal.task && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white p-6 rounded-xl shadow-xl max-w-lg w-full">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">Editar Tarefa</h3>
+            <form onSubmit={executeEditTask}>
+              
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-slate-600 mb-1">Título</label>
+                <input type="text" required value={editModal.task.title} onChange={(e) => setEditModal({...editModal, task: {...editModal.task, title: e.target.value}})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Prioridade</label>
+                  <select value={editModal.task.priority} onChange={(e) => setEditModal({...editModal, task: {...editModal.task, priority: e.target.value}})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none bg-white">
+                    <option value="high">Alta</option>
+                    <option value="medium">Média</option>
+                    <option value="low">Baixa</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Time Responsável</label>
+                  <select required value={editModal.task.team_id} onChange={(e) => setEditModal({...editModal, task: {...editModal.task, team_id: e.target.value}})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none bg-white">
+                    {teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <label className="block text-xs font-medium text-slate-600 mb-1">Atribuir para (Opcional)</label>
+                <select value={editModal.task.assigned_to || ''} onChange={(e) => setEditModal({...editModal, task: {...editModal.task, assigned_to: e.target.value}})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none bg-white">
+                  <option value="">Sem atribuição (Aberto)</option>
+                  {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+              </div>
+
+              <div className="mb-5">
+                <label className="block text-xs font-medium text-slate-600 mb-1">Descrição</label>
+                <textarea value={editModal.task.description || ''} onChange={(e) => setEditModal({...editModal, task: {...editModal.task, description: e.target.value}})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none h-20 resize-none" />
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button type="button" onClick={() => setEditModal({ isOpen: false, task: null })} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition">Cancelar</button>
+                <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition">Salvar Alterações</button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Notificação Flutuante (Toast) */}
+      {toast.show && (
+        <div className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg font-medium text-sm text-white transform transition-all duration-300 ${toast.isError ? 'bg-red-600' : 'bg-emerald-600'} z-50`}>
+          {toast.text}
+        </div>
+      )}
+
     </div>
   );
 }
