@@ -11,7 +11,6 @@ export function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Busca as tarefas assim que a página carrega
   useEffect(() => {
     fetchTasks();
   }, []);
@@ -32,82 +31,104 @@ export function Dashboard() {
     navigate('/login');
   };
 
+  // --- NOVAS FUNÇÕES DE INTERAÇÃO ---
+
+  const handleStatusChange = async (taskId: number, newStatus: string) => {
+    try {
+      await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
+      fetchTasks(); // Atualiza a tela para mostrar a cor nova
+    } catch (error) {
+      alert('Erro ao atualizar o status da tarefa.');
+    }
+  };
+
+  const handleDeleteTask = async (taskId: number) => {
+    if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
+    try {
+      await api.delete(`/tasks/${taskId}`);
+      fetchTasks(); // Remove o card da tela
+    } catch (error) {
+      alert('Erro ao excluir tarefa. Você tem permissão?');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Navbar Superior */}
       <nav className="bg-indigo-600 text-white p-4 shadow-md">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold">Task Manager</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm">
-              Olá, <b>{user?.name}</b> ({user?.role})
-            </span>
-            <button 
-              onClick={handleLogout}
-              className="bg-indigo-700 hover:bg-indigo-800 px-3 py-1 rounded transition text-sm"
-            >
-              Sair
-            </button>
+            <span className="text-sm">Olá, <b>{user?.name}</b> ({user?.role})</span>
+            <button onClick={handleLogout} className="bg-indigo-700 hover:bg-indigo-800 px-3 py-1 rounded transition text-sm">Sair</button>
           </div>
         </div>
       </nav>
 
-      {/* Conteúdo Principal */}
       <main className="max-w-6xl mx-auto p-6 mt-4">
-        
-        {/* Renderiza o Painel de Admin SOMENTE se a role for 'admin' */}
-        {user?.role === 'admin' && (
-          <AdminPanel onTaskCreated={fetchTasks} />
-        )}
+        {user?.role === 'admin' && <AdminPanel onTaskCreated={fetchTasks} />}
 
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-slate-800">Suas Tarefas</h2>
-          <button 
-            onClick={fetchTasks}
-            className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-md hover:bg-slate-50 transition font-medium shadow-sm text-sm"
-          >
-            🔄 Atualizar
-          </button>
+          <button onClick={fetchTasks} className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-md hover:bg-slate-50 transition font-medium shadow-sm text-sm">🔄 Atualizar</button>
         </div>
 
-        {/* Grid de Tarefas */}
         {loading ? (
           <p className="text-center text-slate-500 mt-10">Carregando tarefas...</p>
         ) : tasks.length === 0 ? (
-          <div className="text-center bg-white p-10 rounded-xl border border-dashed border-slate-300 text-slate-500">
-            Nenhuma tarefa encontrada.
-          </div>
+          <div className="text-center bg-white p-10 rounded-xl border border-dashed border-slate-300 text-slate-500">Nenhuma tarefa encontrada.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {tasks.map((task) => (
-              <div key={task.id} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-bold text-slate-800 text-lg leading-tight">{task.title}</h3>
-                  <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wider
-                    ${task.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                      task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 
-                      'bg-emerald-100 text-emerald-800'}`}
-                  >
-                    {task.status.replace('_', ' ')}
-                  </span>
+              <div key={task.id} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-bold text-slate-800 text-lg leading-tight">{task.title}</h3>
+                    <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wider
+                      ${task.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                        task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'}`}
+                    >
+                      {task.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600 mb-4 min-h-[40px] italic">{task.description || "Sem descrição informada."}</p>
+                  <div className="pt-4 border-t border-slate-100 text-xs text-slate-500 flex flex-col gap-1 mb-4">
+                    <span className="flex items-center gap-1">🏢 {task.team?.name || `Time ID: ${task.team_id}`}</span>
+                    <span className="flex items-center gap-1 font-medium text-indigo-600">👤 {task.assignee?.name || 'Não atribuída'}</span>
+                    <span className="mt-1">Prioridade: <b className="uppercase">{task.priority}</b></span>
+                  </div>
                 </div>
-                
-                {/* AQUI ESTÁ A CORREÇÃO DA DESCRIÇÃO */}
-                <p className="text-sm text-slate-600 mb-4 min-h-[40px] italic">
-                  {task.description ? task.description : "Sem descrição informada."}
-                </p>
-                
-                <div className="pt-4 border-t border-slate-100 text-xs text-slate-500 flex flex-col gap-1">
-                  <span className="flex items-center gap-1">
-                    🏢 {task.team?.name || `Time ID: ${task.team_id}`}
-                  </span>
-                  <span className="flex items-center gap-1 font-medium text-indigo-600">
-                    👤 {task.assignee?.name || 'Não atribuída'}
-                  </span>
-                  <span className="mt-1">
-                    Prioridade: <b className="uppercase">{task.priority}</b>
-                  </span>
+
+                {/* BOTÕES DE AÇÃO NO FINAL DO CARD */}
+                <div className="flex gap-2 mt-auto border-t border-slate-100 pt-3">
+                  {task.status !== 'completed' && (
+                    <button 
+                      onClick={() => handleStatusChange(task.id, 'completed')}
+                      className="flex-1 bg-emerald-50 text-emerald-700 font-medium py-1.5 rounded text-sm hover:bg-emerald-100 transition border border-emerald-200"
+                    >
+                      ✅ Concluir
+                    </button>
+                  )}
+                  {task.status === 'completed' && (
+                    <button 
+                      onClick={() => handleStatusChange(task.id, 'in_progress')}
+                      className="flex-1 bg-blue-50 text-blue-700 font-medium py-1.5 rounded text-sm hover:bg-blue-100 transition border border-blue-200"
+                    >
+                      ⏪ Reabrir
+                    </button>
+                  )}
+                  
+                  {/* Somente Admin pode ver o botão de excluir */}
+                  {user?.role === 'admin' && (
+                    <button 
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-sm hover:bg-red-100 transition border border-red-200"
+                      title="Excluir Tarefa"
+                    >
+                      🗑️
+                    </button>
+                  )}
                 </div>
+
               </div>
             ))}
           </div>
