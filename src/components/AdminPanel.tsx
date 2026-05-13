@@ -102,13 +102,16 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
 
   // --- FUNÇÕES DE GESTÃO DE USUÁRIOS ---
 
-  const handleDeleteUser = async (id: number) => {
+ const handleDeleteUser = async (id: number) => {
     if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
     try {
       await api.delete(`/users/${id}`);
       fetchUsers(); // Atualiza a lista na hora
       alert("Usuário removido!");
-    } catch (error) { alert("Erro ao excluir"); }
+    } catch (error: any) {
+      // AGORA ELE VAI MOSTRAR O TEXTO EXATO DO ERRO:
+      alert(error.response?.data?.error || "Erro ao excluir o usuário");
+    }
   };
   
   const handleEditUser = async (user: User) => {
