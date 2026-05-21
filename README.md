@@ -21,41 +21,36 @@ Antes de começar, verifique se você possui:
 * **Ambiente:** Node.js (versão LTS).
 * **Gerenciador de Pacotes:** NPM ou Yarn.
 * **Ferramentas:** VS Code com extensões recomendadas (ESLint/Prettier).
-* **Conexão:** Acesso à API do backend (Task Manager API) rodando localmente ou em staging.
+* **Conexão:** Acesso à API do backend (OrganizaTask-API) rodando localmente ou em staging.
 
 ## 🛠️ Stack Tecnológica
 
 O projeto utiliza o que há de mais moderno no ecossistema de desenvolvimento de interfaces:
 
 * **Core:** React.js (com Vite).
-* **Estilização:** CSS / Tailwind CSS *(ajuste conforme o que você usou no projeto)*.
+* **Estilização:** CSS / Tailwind CSS 
 * **Gerenciamento de Estado:** Context API / Hooks customizados.
 * **Consumo de API:** Axios ou Fetch API.
 
 ## 🚀 Como Iniciar
 
 **1. Clone e Instalação:**
-```bash
-git clone [https://github.com/leonard0antonio/task-manager-frontend.git](https://github.com/leonard0antonio/task-manager-frontend.git)
-cd task-manager-frontend
+
+git clone [https://github.com/leonard0antonio/OrganizaTask-frontend.git](https://github.com/leonard0antonio/OrganizaTask-frontend.git)
+cd OrganizaTask-frontend
 npm install
 
-```
 
 **2. Configuração de Variáveis de Ambiente:**
 Crie um arquivo `.env` na raiz do projeto e adicione a URL da sua API de tarefas:
 
-```env
 VITE_API_URL=http://localhost:3000
 
-```
 
 **3. Execução:**
 
-```bash
 npm run dev
 
-```
 
 ## 📱 Visualização e Responsividade
 
@@ -75,6 +70,19 @@ Para contribuir com melhorias de UI ou correções de componentes:
 4. Envie o Pull Request.
 
 ## 🤝 Colaboradores
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/leonard0antonio" title="Leonardo Antonio">
+        <img src="https://avatars.githubusercontent.com/u/169267801?v=4" width="100px;" alt="Foto do leonardo no GitHub"/><br>
+        <sub>
+          <b>Leonardo Antonio</b>
+        </sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
 ## 📝 Licença
 
