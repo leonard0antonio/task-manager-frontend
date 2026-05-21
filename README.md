@@ -91,4 +91,3 @@ Este projeto está sob a licença **Apache License 2.0**.
 Copyright 2026 © Leonardo Antonio
 
 Você não pode usar este arquivo exceto em conformidade com a Licença. Você pode obter uma cópia da Licença em: http://www.apache.org/licenses/LICENSE-2.0. Consulte o arquivo `LICENSE` no repositório para mais informações.
-```
