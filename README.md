@@ -1,73 +1,86 @@
-# React + TypeScript + Vite
+# 🎨 OrganizaTask-frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<!-- Badges de Tecnologia e Status -->
+![GitHub repo size](https://img.shields.io/github/repo-size/leonard0antonio/task-manager-frontend?style=for-the-badge)
+![GitHub language count](https://img.shields.io/github/languages/count/leonard0antonio/task-manager-frontend?style=for-the-badge)
+![GitHub top language](https://img.shields.io/github/languages/top/leonard0antonio/task-manager-frontend?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-completed-green?style=for-the-badge)
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+![Demo da aplicação](demo.png)
+<div align="center">
+  <p><i>Interface responsiva e intuitiva para o projeto Task Manager.</i></p>
+</div>
 
-## React Compiler
+> Uma aplicação frontend moderna focada em facilitar a organização, criação e gestão de tarefas diárias. Desenvolvida com foco em performance, fluidez e acessibilidade para o usuário.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 💻 Pré-requisitos
 
-## Expanding the ESLint configuration
+Antes de começar, verifique se você possui:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+* **Ambiente:** Node.js (versão LTS).
+* **Gerenciador de Pacotes:** NPM ou Yarn.
+* **Ferramentas:** VS Code com extensões recomendadas (ESLint/Prettier).
+* **Conexão:** Acesso à API do backend (Task Manager API) rodando localmente ou em staging.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🛠️ Stack Tecnológica
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+O projeto utiliza o que há de mais moderno no ecossistema de desenvolvimento de interfaces:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+* **Core:** React.js (com Vite).
+* **Estilização:** CSS / Tailwind CSS *(ajuste conforme o que você usou no projeto)*.
+* **Gerenciamento de Estado:** Context API / Hooks customizados.
+* **Consumo de API:** Axios ou Fetch API.
+
+## 🚀 Como Iniciar
+
+**1. Clone e Instalação:**
+```bash
+git clone [https://github.com/leonard0antonio/task-manager-frontend.git](https://github.com/leonard0antonio/task-manager-frontend.git)
+cd task-manager-frontend
+npm install
+
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+**2. Configuração de Variáveis de Ambiente:**
+Crie um arquivo `.env` na raiz do projeto e adicione a URL da sua API de tarefas:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```env
+VITE_API_URL=http://localhost:3000
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+
+**3. Execução:**
+
+```bash
+npm run dev
+
+```
+
+## 📱 Visualização e Responsividade
+
+Este projeto foi testado e otimizado para:
+
+* [x] Navegadores Web (Chrome, Edge, Firefox).
+* [x] Dispositivos Mobile (Android e iOS).
+* [x] Tablets e diferentes resoluções de tela.
+
+## 📫 Contribuindo
+
+Para contribuir com melhorias de UI ou correções de componentes:
+
+1. Faça o Fork do projeto.
+2. Crie uma branch para sua melhoria visual: `git checkout -b style/ajuste-componente`.
+3. Siga o padrão de **Conventional Commits**: `git commit -m 'style(ui): ajusta padding e cores do card de tarefa'`.
+4. Envie o Pull Request.
+
+## 🤝 Colaboradores
+
+## 📝 Licença
+
+Este projeto está sob a licença **Apache License 2.0**.
+
+Copyright 2026 © Leonardo Antonio
+
+Você não pode usar este arquivo exceto em conformidade com a Licença. Você pode obter uma cópia da Licença em: http://www.apache.org/licenses/LICENSE-2.0. Consulte o arquivo `LICENSE` no repositório para mais informações.
 ```
