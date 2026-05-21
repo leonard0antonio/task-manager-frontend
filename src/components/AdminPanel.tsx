@@ -3,12 +3,15 @@ import { api } from '../services/api';
 import type { Team, User, Task } from '../types';
 import { AdminForms } from './admin/AdminForms';
 import { AdminTables } from './admin/AdminTables';
+import { useAuth } from '../contexts/AuthContext'; // Importação do contexto de autenticação
 
 interface AdminPanelProps {
   onTaskCreated: () => void;
 }
 
 export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
+  const { user } = useAuth(); // Puxando os dados do admin logado de forma dinâmica
+  
   // O Mestre guarda o estado dos dados
   const [teams, setTeams] = useState<Team[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -46,7 +49,10 @@ export function AdminPanel({ onTaskCreated }: AdminPanelProps) {
       <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-200">
         <div className="w-10 h-10 bg-indigo-600 text-white rounded-lg flex items-center justify-center text-xl shadow-lg shadow-indigo-600/20">O</div>
         <div>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Workspace Admin</h2>
+          {/* Título dinâmico baseado no Administrador ativo */}
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            Painel de {user?.name || 'Workspace Admin'}
+          </h2>
           <p className="text-sm font-medium text-slate-500">OrganizaTask Enterprise</p>
         </div>
       </div>
