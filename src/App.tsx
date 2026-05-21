@@ -3,9 +3,11 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard'; 
 import { Landing } from './pages/Landing';
+import type { ReactNode } from 'react';
+
 
 // Componente para proteger rotas (Só acessa se estiver logado)
-function PrivateRoute({ children }: { children: JSX.Element }) {
+function PrivateRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) {
     return (
