@@ -4,10 +4,11 @@
 ![GitHub repo size](https://img.shields.io/github/repo-size/leonard0antonio/task-manager-frontend?style=for-the-badge)
 ![GitHub language count](https://img.shields.io/github/languages/count/leonard0antonio/task-manager-frontend?style=for-the-badge)
 ![GitHub top language](https://img.shields.io/github/languages/top/leonard0antonio/task-manager-frontend?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Em_Desenvolvimento-yellow?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-completed-green?style=for-the-badge)
 
+
+![Demo da aplicação](demo.png)
 <div align="center">
-  ![Demo da aplicação](demo.png)
   <p><i>Interface responsiva e intuitiva para o projeto Task Manager.</i></p>
 </div>
 
@@ -82,11 +83,4 @@ Este projeto está sob a licença **Apache License 2.0**.
 Copyright 2026 © Leonardo Antonio
 
 Você não pode usar este arquivo exceto em conformidade com a Licença. Você pode obter uma cópia da Licença em: http://www.apache.org/licenses/LICENSE-2.0. Consulte o arquivo `LICENSE` no repositório para mais informações.
-
-```
-
-### O que você precisa ajustar manualmente:
-1. **Imagem de Demonstração:** Lembre-se de substituir o `link-do-seu-gif-de-demo.gif` por um link real de uma imagem ou GIF mostrando o seu frontend funcionando.
-2. **Stack Tecnológica:** Na seção de Stack, eu coloquei React/Vite e Tailwind como exemplos (que combinam bastante com as tecnologias que você costuma usar). Se estiver usando outras ferramentas (como Styled Components, por exemplo), basta alterar lá.
-
 ```
