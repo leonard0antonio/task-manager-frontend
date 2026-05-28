@@ -1,9 +1,9 @@
 # 🎨 OrganizaTask-frontend
 
 <!-- Badges de Tecnologia e Status -->
-![GitHub repo size](https://img.shields.io/github/repo-size/leonard0antonio/task-manager-frontend?style=for-the-badge)
-![GitHub language count](https://img.shields.io/github/languages/count/leonard0antonio/task-manager-frontend?style=for-the-badge)
-![GitHub top language](https://img.shields.io/github/languages/top/leonard0antonio/task-manager-frontend?style=for-the-badge)
+![GitHub repo size](https://img.shields.io/github/repo-size/leonard0antonio/OrganizaTask-frontend?style=for-the-badge)
+![GitHub language count](https://img.shields.io/github/languages/count/leonard0antonio/OrganizaTask-frontend?style=for-the-badge)
+![GitHub top language](https://img.shields.io/github/languages/top/leonard0antonio/OrganizaTask-frontend?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-completed-green?style=for-the-badge)
 
 
